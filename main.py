@@ -1,12 +1,20 @@
 import argparse
 import os,json, sys
 import numpy as np
+import subprocess
 # single gpu
-
-os.system('nvidia-smi -q -d Memory | grep -A5 GPU | grep Free > tmp.txt')
+# Specify the path to Git Bash (adjust this path if needed)
+git_bash_path = r'C:\Program Files\Git\bin\bash.exe'
+# Run the nvidia-smi command using Git Bash
+command = 'nvidia-smi -q -d Memory | grep -A5 GPU | grep Free > tmp.txt'
+subprocess.run([git_bash_path, '-c', command])
+# os.system('nvidia-smi -q -d Memory | grep -A5 GPU | grep Free > tmp.txt')
 memory_gpu = [int(x.split()[2]) for x in open('tmp.txt', 'r').readlines()]
 os.environ["CUDA_VISIBLE_DEVICES"] = str(np.argmax(memory_gpu)) 
-os.system('rm tmp.txt')
+# os.system('rm tmp.txt')
+# With this Python alternative
+if os.path.exists('tmp.txt'):
+    os.remove('tmp.txt')
 
 import torch
 import utils
@@ -66,7 +74,7 @@ if __name__ == "__main__":
     
     parser.add_argument("--logdir", type=str, default="log") # Where to log diagnostics to
     parser.add_argument("--loaddir", type=str, default=None)
-    parser.add_argument("--loadmodel", type=str, default="acmodel")
+    parser.add_argument("--loadmodel", type=str, default="8000.pt")
     parser.add_argument("--savedir", type=str, required=True, help="path to folder containing policy and run details")
     
     parser.add_argument("--offline_planner", default=False, action='store_true')

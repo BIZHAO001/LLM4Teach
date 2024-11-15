@@ -11,6 +11,7 @@
 
 import os, requests
 from typing import Any
+from openai import OpenAI
 from mediator import *
 from utils import global_param
 
@@ -34,12 +35,14 @@ class Base_Planner(ABC):
         self.show_dialogue = False
         
         if not offline:
-            self.llm_model = "vicuna-33b"
-            self.llm_url = 'http://localhost:3300/v1/chat/completions'
-            # self.llm_model = "chatglm_Turbo"
+            # self.llm_model = "vicuna-33b"
+            # self.llm_url = 'http://localhost:3300/v1/chat/completions'
+            self.llm_model = "chatglm_Turbo"
             # self.llm_url = 'http://10.109.116.3:6000/chat'
+            self.llm_url = 'http://10.96.42.224:6000/chat'
             self.plans_dict = {}
             if self.llm_model == "vicuna-33b":
+            # if self.llm_model == "chatglm_Turbo":
                 self.init_llm()
         
     def reset(self, show=False):
@@ -75,36 +78,70 @@ class Base_Planner(ABC):
                 server_error_cnt += 1
                 print(f"fail to initialize: {e}")
 
+    # def query_codex(self, prompt_text):  # chatglm or vicuna-33b version
+    #     server_error_cnt = 0
+    #     while server_error_cnt < 10:
+    #         try:
+    #             #response =  openai.Completion.create(prompt_text)
+    #             headers = {'Content-Type': 'application/json'}
+    #
+    #             # print(f"user prompt:{prompt_text}")
+    #             if self.llm_model == "chatglm_Turbo":
+    #                 data = {'model': self.llm_model, "prompt":[{"role": "user", "content": self.prompt_prefix + prompt_text}]}
+    #             elif self.llm_model == "vicuna-33b":
+    #                 data = {'model': self.llm_model, "messages":[{"role": "user", "content": prompt_text}]}
+    #             response = requests.post(self.llm_url, headers=headers, json=data)
+    #
+    #             if response.status_code == 200:
+    #                 result = response.json()
+    #                 break
+    #             else:
+    #                 assert False, f"fail to query: status code {response.status_code}"
+    #
+    #         except Exception as e:
+    #             server_error_cnt += 1
+    #             print(f"fail to query: {e}")
+    #
+    #     try:
+    #         plan = re.search("Action[s]*\:\s*\{([\w\s\<\>\,]*)\}", result, re.I | re.M).group(1)
+    #         return plan
+    #     except:
+    #         print(f"LLM response invalid format: '{result}'.")
+    #         return self.query_codex(prompt_text)
+
+
     def query_codex(self, prompt_text):
+        # Initialize OpenAI API key and model
+        model = "gpt-3.5-turbo"  # Replace with "gpt-4" if desired
+        os.environ["OPENAI_API_KEY"] = "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"  # Replace with your actual API key
+
         server_error_cnt = 0
         while server_error_cnt < 10:
             try:
-                #response =  openai.Completion.create(prompt_text)
-                headers = {'Content-Type': 'application/json'}
-                
-                # print(f"user prompt:{prompt_text}")
-                if self.llm_model == "chatglm_Turbo":
-                    data = {'model': self.llm_model, "prompt":[{"role": "user", "content": self.prompt_prefix + prompt_text}]}     
-                elif self.llm_model == "vicuna-33b":
-                    data = {'model': self.llm_model, "messages":[{"role": "user", "content": prompt_text}]}
-                response = requests.post(self.llm_url, headers=headers, json=data)
+                client = OpenAI(
+                    api_key=os.environ.get("OPENAI_API_KEY")  # Retrieves the API key securely
+                )
+                # Using OpenAI's chat completion API
+                response = client.chat.completions.create(
+                    model=model,
+                    # messages=[{"role": "user", "content": prompt_text}]
+                    messages=[{"role": "user", "content": self.prompt_prefix + prompt_text}]
+                )
+                # Extracting the response content
+                # result = response['choices'][0]['message']['content']
+                result = response.choices[0].message.content
+                break
 
-                if response.status_code == 200:
-                    result = response.json()
-                    break
-                else:
-                    assert False, f"fail to query: status code {response.status_code}"
-                    
             except Exception as e:
                 server_error_cnt += 1
-                print(f"fail to query: {e}")
-                
+                print(f"Failed to query: {e}")
+
         try:
-            plan = re.search("Action[s]*\:\s*\{([\w\s\<\>\,]*)\}", result, re.I | re.M).group(1)
+            plan = re.search(r"Action[s]*\:\s*\{([\w\s\<\>\,]*)\}", result, re.I | re.M).group(1)
             return plan
         except:
             print(f"LLM response invalid format: '{result}'.")
-            return self.query_codex(prompt_text)   
+            return self.query_codex(prompt_text)  # Recursive retry in case of invalid format (use cautiously)
         
     def plan(self, text, n_ask=10):
         if text in self.plans_dict.keys():
