@@ -2,6 +2,9 @@ import argparse
 import os,json, sys
 import numpy as np
 import subprocess
+import torch
+import utils
+from Game import Game
 # single gpu
 # Specify the path to Git Bash (adjust this path if needed)
 git_bash_path = r'C:\Program Files\Git\bin\bash.exe'
@@ -16,9 +19,6 @@ os.environ["CUDA_VISIBLE_DEVICES"] = str(np.argmax(memory_gpu))
 if os.path.exists('tmp.txt'):
     os.remove('tmp.txt')
 
-import torch
-import utils
-from Game import Game
     
 def train(args):
     for i in args.seed_list:
