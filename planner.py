@@ -111,6 +111,9 @@ class Base_Planner(ABC):
 
 
     def query_codex(self, prompt_text):
+        # Initialize OpenAI API key and model
+        model = "gpt-4o-mini"  # Replace with "gpt-4" if desired
+        os.environ["OPENAI_API_KEY"] = "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"  # Replace with your actual API key
 
         server_error_cnt = 0
         while server_error_cnt < 10:
