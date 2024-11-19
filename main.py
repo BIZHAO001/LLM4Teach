@@ -1,10 +1,11 @@
 import argparse
-import os,json, sys
+import os, json, sys
 import numpy as np
 import subprocess
 # single gpu
 # Specify the path to Git Bash (adjust this path if needed)
-git_bash_path = r'C:\Program Files\Git\bin\bash.exe'
+# git_bash_path = r'C:\Program Files\Git\bin\bash.exe'  # in desktop
+git_bash_path = r'C:\Users\aiden.pang\AppData\Local\Programs\Git\bin\bash.exe'  # in laptop
 # Run the nvidia-smi command using Git Bash
 command = 'nvidia-smi -q -d Memory | grep -A5 GPU | grep Free > tmp.txt'
 subprocess.run([git_bash_path, '-c', command])
